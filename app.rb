@@ -9,7 +9,7 @@ mp4box = nil
 %W{mp4box MP4Box}.each{|command|
   if !Open3.capture3("which #{command}").first.empty?
     mp4box = command
-    #break
+    break
   end
 }
 unless mp4box
