@@ -51,7 +51,7 @@ files.each do |file|
     end
   end
 
-  system(mp4box, "-add", file, "#{file}.new", '-new')
+  system(mp4box, '-add', file, "#{file}.new", '-new')
 
   TagLib::MP4::File.open("#{file}.new") do |mp4|
     map = mp4.tag.item_list_map
