@@ -7,7 +7,7 @@ require 'fileutils'
 
 mp4box = nil
 %W{mp4box MP4Box}.each{|command|
-  if !Open3.capture3("which #{command}").first.empty?
+  if Open3.capture2('which', command)[1].exitstatus == 0
     mp4box = command
     break
   end
