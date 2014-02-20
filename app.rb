@@ -17,61 +17,39 @@ unless mp4box
   exit 
 end
 
-files = []
-if ARGV.size > 0
-  files = ARGV
-else
+filenames = ARGV
+if filenames.empty?
   puts "usage: #{$PROGRAM_NAME} m4afiles ..."
-  exit 0
+  exit 1
 end
 
-files.each do |file|
-  unless File.exists? file
-    puts "#{file} is not found."
+filenames.each do |filename|
+  unless File.exists? filename
+    puts "#{filename} is not found."
     next
   end
 
-  tags = []
-  TagLib::MP4::File.open(file) do |mp4|
-    mp4.tag.item_list_map.to_a.each do |t|
-      k, v = t
+  tmp_filename = "#{filename}.tmp"
+  system(mp4box, '-add', filename, tmp_filename, '-new')
 
-      next if k.include? 'com.apple.iTunes'
-      next if k.include? 'purd'
+  TagLib::MP4::File.open filename do |from|
+    TagLib::MP4::File.open tmp_filename do |to|
+      from_tags = from.tag.item_list_map
+      to_tags = to.tag.item_list_map
 
-      if k == 'covr'
-        type = :cover_art_list
-        value = v.to_cover_art_list.first
-      else
-        type = :string_list
-        value = v.to_string_list 
-        unless value.size > 0
-          type = :int
-          value = v.to_int
-        end
+      from_tags.to_a.each do |k, v|
+        next if k.include? 'com.apple.iTunes'
+        next if k.include? 'purd'
+        next if k.include? 'apID'
+
+        to_tags.insert k, v
       end
-      tags << {:name => k, :type => type, :value => value}
+
+      to.save
     end
   end
 
-  system(mp4box, '-add', file, "#{file}.new", '-new')
-
-  TagLib::MP4::File.open("#{file}.new") do |mp4|
-    map = mp4.tag.item_list_map
-    tags.each do |tag|
-      case tag[:type]
-      when :string_list
-        map.insert tag[:name], TagLib::MP4::Item.from_string_list(tag[:value])
-      when :int
-        map.insert tag[:name], TagLib::MP4::Item.from_int(tag[:value])
-      when :cover_art_list
-        map.insert tag[:name], TagLib::MP4::Item.from_cover_art_list([tag[:value]])
-      end
-    end
-    mp4.save
-  end
-  
-  FileUtils.rm file
-  FileUtils.mv "#{file}.new" ,file
+  FileUtils.rm filename
+  FileUtils.mv tmp_filename, filename
 end
 
