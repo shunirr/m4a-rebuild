@@ -2,6 +2,20 @@
 # -*- coding: utf-8 -*-
 
 require 'taglib'
+require 'open3'
+require 'fileutils'
+
+mp4box = nil
+%W{mp4box MP4Box}.each{|command|
+  if !Open3.capture3("which #{command}").first.empty?
+    mp4box = command
+    break
+  end
+}
+unless mp4box
+  puts "Please Install MP4Box"
+  exit 
+end
 
 files = []
 if ARGV.size > 0
@@ -40,7 +54,7 @@ files.each do |file|
     end
   end
 
-  system("mp4box -add \"#{file}\" \"#{file}.new\" -new")
+  system(mp4box, '-add', file, "#{file}.new", '-new')
 
   TagLib::MP4::File.open("#{file}.new") do |mp4|
     map = mp4.tag.item_list_map
@@ -56,7 +70,8 @@ files.each do |file|
     end
     mp4.save
   end
-
-  system("mv #{file}.new #{file}")
+  
+  FileUtils.rm file
+  FileUtils.mv "#{file}.new" ,file
 end
 
