@@ -6,6 +6,9 @@ require 'taglib'
 files = []
 if ARGV.size > 0
   files = ARGV
+else
+  puts "usage: #{$PROGRAM_NAME} m4afiles ..."
+  exit 0
 end
 
 files.each do |file|
